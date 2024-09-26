@@ -1,0 +1,123 @@
+
+server:
+  port: 8080
+
+
+
+
+spring:
+  application:
+    name: USER-SERVICE
+  datasource:
+    url: jdbc:mysql://localhost:3306/hrs_userdb?createTableIfNotExist=true
+    username: root
+    password: 7028230983
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQL8Dialect
+
+# we will fetch some configuration from configuration server
+  config:
+    import: configserver:http://localhost:8085
+
+
+  ##spring security config
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: https://dev-91575831.okta.com/oauth2/default  #same as okta issuer
+        client:
+          registration:
+            my-internal-client:
+              provider: okta
+              authorization-grant-type: client-credentials
+              scope: internal
+              client-id: 0oait8y4dhjMeGYuf5d7 # okta's
+
+          provider:
+            okta:
+              issuer-uri: https://dev-91575831.okta.com/oauth2/default
+
+# local configuration which are hard coded
+#eureka:
+#  instance:
+#    prefer-ip-address: true
+#  client:
+#    fetch-registry: true
+#    register-with-eureka: true
+#    service-url:
+#      defaultZone: http://localhost:8761/eureka
+
+#actuator config
+management:
+  health:
+    circuitbreakers:
+      enabled: true
+  endpoints:
+    web:
+      exposure:
+        include: health
+
+  endpoint:
+    health:
+      show-details: always
+
+
+#  circuit breaker configuration
+resilience4j:
+  circuitbreaker:
+    instances:
+      ratingHotelBreaker:
+        registerHealthIndicator: true
+        eventConsumerBufferSize: 10
+        failureRateThreshold: 50
+        minimumNumberOfCalls: 5
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+        waitDurationInOpenState: 6s
+        permittedNumberOfCallsInHalfOpenState: 3
+        slidingWindowSize: 10
+        slidingWindowType: COUNT_BASED
+
+  ## retry configuration
+  retry:
+    instances:
+      ratingHotelService:
+        max-attempts: 3
+        wait-duration: 2s
+
+  ## rate limiter configuration
+  ratelimiter:
+    instances:
+      userRateLimiter:
+        limit-refresh-period: 4s
+        limit-for-period: 2
+        timeout-duration: 2s
+
+logging:
+  level:
+    feign: DEBUG
+
+## okta config
+okta:
+  oauth2:
+    issuer: https://dev-91575831.okta.com/oauth2/default
+    audience: api://default
+
+
+
+
+
+
+
+
+
+
+
+
+
